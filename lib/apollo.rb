@@ -84,7 +84,7 @@ module Apollo
       return_value = run_action(event.action, *args) || run_action_callback(event.name, *args)
       if @halted
         if @raise_exception_on_halt
-          raise TransitionHalted.new(@halted_because)
+          raise @raise_exception_on_halt
         else
           false
         end
@@ -118,16 +118,21 @@ module Apollo
       c.apollo_spec
     end
 
-    def halt(reason = nil)
+    def halt(reason)
       @halted_because = reason
       @halted = true
       @raise_exception_on_halt = false
     end
 
-    def halt!(reason = nil)
+    def halt!(reason, exception_klass = TransitionHalted)
       @halted_because = reason
       @halted = true
-      @raise_exception_on_halt = true
+      if exception_klass.class == Class
+        @raise_exception_on_halt = exception_klass.new(reason)
+      else
+        @raise_exception_on_halt = exception_klass
+      end
+      @raise_exception_on_halt.set_backtrace(caller)
     end
 
     def transition(from, to, name, *args)
