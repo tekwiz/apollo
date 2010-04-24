@@ -14,9 +14,9 @@ What is workflow?
 -----------------
 
 Workflow is a finite-state-machine-inspired API for modeling and
-interacting with what we tend to refer to as 'workflow'.
+interacting with what we tend to refer to as 'apollo'.
 
-A lot of business modeling tends to involve workflow-like concepts, and
+A lot of business modeling tends to involve apollo-like concepts, and
 the aim of this library is to make the expression of these concepts as
 clear as possible, using similar terminology as found in state machine
 theory.
@@ -38,20 +38,20 @@ with a real-ish world example.
 Let's say we're modeling article submission from journalists. An article
 is written, then submitted. When it's submitted, it's awaiting review.
 Someone reviews the article, and then either accepts or rejects it.
-Here is the expression of this workflow using the API:
+Here is the expression of this apollo using the API:
 
     class Article
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :new do
-          event :submit, :transitions_to => :awaiting_review
+          event :submit, :to => :awaiting_review
         end
         state :awaiting_review do
-          event :review, :transitions_to => :being_reviewed
+          event :review, :to => :being_reviewed
         end
         state :being_reviewed do
-          event :accept, :transitions_to => :accepted
-          event :reject, :transitions_to => :rejected
+          event :accept, :to => :accepted
+          event :reject, :to => :rejected
         end
         state :accepted
         state :rejected
@@ -70,9 +70,9 @@ You can also access the whole `current_state` object including the list
 of possible events and other meta information:
 
     article.current_state 
-    => #<Workflow::State:0x7f1e3d6731f0 @events={
-      :submit=>#<Workflow::Event:0x7f1e3d6730d8 @action=nil, 
-        @transitions_to=:awaiting_review, @name=:submit, @meta={}>}, 
+    => #<Apollo::State:0x7f1e3d6731f0 @events={
+      :submit=>#<Apollo::Event:0x7f1e3d6730d8 @action=nil, 
+        @to=:awaiting_review, @name=:submit, @meta={}>}, 
       name:new, meta{}
 
 Now we can call the submit event, which transitions to the
@@ -81,7 +81,7 @@ Now we can call the submit event, which transitions to the
     article.submit!
     article.awaiting_review? # => true
   
-Events are actually instance methods on a workflow, and depending on the
+Events are actually instance methods on a apollo, and depending on the
 state you're in, you'll have a different set of events used to
 transition to other states.
 
@@ -89,9 +89,9 @@ transition to other states.
 Installation
 ------------
 
-    gem install workflow
+    gem install apollo
 
-Alternatively you can just download the lib/workflow.rb and put it in
+Alternatively you can just download the lib/apollo.rb and put it in
 the lib folder of your Rails or Ruby application.
 
 
@@ -103,7 +103,7 @@ all the example code from this README in irb.
 
     $ irb
     require 'rubygems'
-    require 'workflow'
+    require 'apollo'
 
 Now just copy and paste the source code from the beginning of this README
 file snippet by snippet and observe the output.
@@ -114,7 +114,7 @@ Transition event handler
 
 The best way is to use convention over configuration and to define a
 method with the same name as the event. Then it is automatically invoked
-when event is raised. For the Article workflow defined earlier it would
+when event is raised. For the Article apollo defined earlier it would
 be:
 
     class Article
@@ -145,7 +145,7 @@ arguments:
 
 The old way, using a block is still supported but deprecated:
 
-    event :review, :transitions_to => :being_reviewed do |reviewer|
+    event :review, :to => :being_reviewed do |reviewer|
       # store the reviewer
     end
 
@@ -159,40 +159,40 @@ name as the event (convention over configuration) as explained before.
 Integration with ActiveRecord
 -----------------------------
 
-Workflow library can handle the state persistence fully automatically. You
-only need to define a string field on the table called `workflow_state`
-and include the workflow mixin in your model class as usual:
+Apollo library can handle the state persistence fully automatically. You
+only need to define a string field on the table called `apollo_state`
+and include the apollo mixin in your model class as usual:
 
     class Order < ActiveRecord::Base
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         # list states and transitions here
       end
     end
 
 On a database record loading all the state check methods e.g.
 `article.state`, `article.awaiting_review?` are immediately available.
-For new records or if the workflow_state field is not set the state
-defaults to the first state declared in the workflow specification. In
+For new records or if the apollo_state field is not set the state
+defaults to the first state declared in the apollo specification. In
 our example it is `:new`, so `Article.new.new?` returns true and
 `Article.new.approved?` returns false.
 
 At the end of a successful state transition like `article.approve!` the
 new state is immediately saved in the database.
 
-You can change this behaviour by overriding `persist_workflow_state`
+You can change this behaviour by overriding `persist_apollo_state`
 method.
 
 
-### Custom workflow database column
+### Custom apollo database column
 
 [meuble](http://imeuble.info/) contributed a solution for using
 custom persistence column easily, e.g. for a legacy database schema:
 
     class LegacyOrder < ActiveRecord::Base
-      include Workflow
+      include Apollo
       
-      workflow_column :foo_bar # use this legacy database column for
+      apollo_column :foo_bar # use this legacy database column for
                                # persistence
     end
 
@@ -201,16 +201,16 @@ custom persistence column easily, e.g. for a legacy database schema:
 ### Single table inheritance
 
 Single table inheritance is also supported. Descendant classes can either
-inherit the workflow definition from the parent or override with its own
+inherit the apollo definition from the parent or override with its own
 definition.
 
-Custom workflow state persistence
+Custom apollo state persistence
 ---------------------------------
 
 If you do not use a relational database and ActiveRecord, you can still
-integrate the workflow very easily. To implement persistence you just
-need to override `load_workflow_state` and
-`persist_workflow_state(new_value)` methods. Lets see an example for
+integrate the apollo very easily. To implement persistence you just
+need to override `load_apollo_state` and
+`persist_apollo_state(new_value)` methods. Lets see an example for
 using CouchDB, a document oriented database.
 
 Integration with CouchDB
@@ -222,60 +222,60 @@ couchrest library.
 
     require 'couchtiny'
     require 'couchtiny/document'
-    require 'workflow'
+    require 'apollo'
 
     class User < CouchTiny::Document
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :submitted do
-          event :activate_via_link, :transitions_to => :proved_email
+          event :activate_via_link, :to => :proved_email
         end
         state :proved_email
       end
 
-      def load_workflow_state
-        self[:workflow_state]
+      def load_apollo_state
+        self[:apollo_state]
       end
 
-      def persist_workflow_state(new_value)
-        self[:workflow_state] = new_value
+      def persist_apollo_state(new_value)
+        self[:apollo_state] = new_value
         save!
       end
     end
 
 Please also have a look at 
-[the full source code](http://github.com/geekq/workflow/blob/master/test/couchtiny_example.rb).
+[the full source code](http://github.com/geekq/apollo/blob/master/test/couchtiny_example.rb).
 
-Accessing your workflow specification
+Accessing your apollo specification
 -------------------------------------
 
-You can easily reflect on workflow specification programmatically - for
+You can easily reflect on apollo specification programmatically - for
 the whole class or for the current object. Examples:
 
     article2.current_state.events # lists possible events from here
-    article2.current_state.events[:reject].transitions_to # => :rejected
+    article2.current_state.events[:reject].to # => :rejected
 
-    Article.workflow_spec.states.keys
+    Article.apollo_spec.states.keys
     #=> [:rejected, :awaiting_review, :being_reviewed, :accepted, :new]
 
     # list all events for all states
-    Article.workflow_spec.states.values.collect &:events
+    Article.apollo_spec.states.values.collect &:events
 
 
 You can also store and later retrieve additional meta data for every
 state and every event:
 
     class MyProcess
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :main, :meta => {:importance => 8}
         state :supplemental, :meta => {:importance => 1}
       end
     end
-    puts MyProcess.workflow_spec.states[:supplemental].meta[:importance] # => 1
+    puts MyProcess.apollo_spec.states[:supplemental].meta[:importance] # => 1
 
-The workflow library itself uses this feature to tweak the graphical
-representation of the workflow. See below.
+The apollo library itself uses this feature to tweak the graphical
+representation of the apollo. See below.
  
 
 Advanced transition hooks
@@ -283,10 +283,10 @@ Advanced transition hooks
 
 ### on_entry/on_exit
 
-We already had a look at the declaring callbacks for particular workflow
+We already had a look at the declaring callbacks for particular apollo
 events. If you would like to react to all transitions to/from the same state
 in the same way you can use the on_entry/on_exit hooks. You can either define it
-with a block inside the workflow definition or through naming
+with a block inside the apollo definition or through naming
 convention, e.g. for the state :pending just define the method
 `on_pending_exit(new_state, event, *args)` somewhere in your class.
 
@@ -295,9 +295,9 @@ convention, e.g. for the state :pending just define the method
 If you want to be informed about everything happening everywhere, e.g. for
 logging then you can use the universal `on_transition` hook:
 
-    workflow do
+    apollo do
       state :one do
-        event :increment, :transitions_to => :two
+        event :increment, :to => :two
       end
       state :two
       on_transition do |from, to, triggering_event, *event_args|
@@ -310,7 +310,7 @@ logging then you can use the universal `on_transition` hook:
 
 If you want to halt the transition conditionally, you can just raise an
 exception. There is a helper called `halt!`, which raises the
-Workflow::TransitionHalted exception. You can provide an additional
+Apollo::TransitionHalted exception. You can provide an additional
 `halted_because` parameter.
 
     def reject(reason)
@@ -336,19 +336,19 @@ The whole event sequence is as follows:
 Documenting with diagrams
 -------------------------
 
-You can generate a graphical representation of your workflow for
-documentation purposes. S. Workflow::create_workflow_diagram.
+You can generate a graphical representation of your apollo for
+documentation purposes. S. Apollo::create_apollo_diagram.
 
 
 Earlier versions
 ----------------
 
-The `workflow` library was originally written by Ryan Allen.
+The `apollo` library was originally written by Ryan Allen.
 
 The version 0.3 was almost completely (including ActiveRecord
-integration, API for accessing workflow specification, 
+integration, API for accessing apollo specification, 
 method_missing free implementation) rewritten by Vladimir Dobriakov
-keeping the original workflow DSL spirit.
+keeping the original apollo DSL spirit.
 
 
 Migration from the original Ryan's library
@@ -356,19 +356,19 @@ Migration from the original Ryan's library
 
 Credit: Michael (rockrep)
 
-Accessing workflow specification
+Accessing apollo specification
 
-    my_instance.workflow # old
-    MyClass.workflow_spec # new
+    my_instance.apollo # old
+    MyClass.apollo_spec # new
 
 Accessing states, events, meta, e.g.
 
-    my_instance.workflow.states(:some_state).events(:some_event).meta[:some_meta_tag] # old
-    MyClass.workflow_spec.states[:some_state].events[:some_event].meta[:some_meta_tag] # new
+    my_instance.apollo.states(:some_state).events(:some_event).meta[:some_meta_tag] # old
+    MyClass.apollo_spec.states[:some_state].events[:some_event].meta[:some_meta_tag] # new
 
 Causing state transitions
 
-    my_instance.workflow.my_event # old
+    my_instance.apollo.my_event # old
     my_instance.my_event! # new
 
 when using both a block and a callback method for an event, the block executes prior to the callback
@@ -419,7 +419,7 @@ Support
 
 ### Reporting bugs
 
-    http://github.com/geekq/workflow/issues
+    http://github.com/geekq/apollo/issues
 
 
 About

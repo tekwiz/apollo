@@ -1,44 +1,48 @@
 require 'rubygems'
-require 'rake/gempackagetask'
-require 'rake/testtask'
+require 'rake'
+
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "apollo"
+    gem.summary = %Q{A fork of workflow: a finite-state-machine-inspired API for modeling and interacting with what we tend to refer to as 'workflow'.}
+    gem.email = "warlickt@operissystems.com"
+    gem.homepage = "http://github.com/tekwiz/apollo"
+    gem.authors = ["Travis D. Warlick, Jr."]
+    # gem.add_development_dependency "rspec", "~> 1.3.0"
+    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+  end
+  Jeweler::GemcutterTasks.new
+rescue LoadError
+  puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
+end
+
+# TODO rspecs
+# require 'spec/rake/spectask'
+# Spec::Rake::SpecTask.new(:spec) do |spec|
+#   spec.libs << 'lib' << 'spec'
+#   spec.spec_files = FileList['spec/**/*_spec.rb']
+# end
+# 
+# Spec::Rake::SpecTask.new(:rcov) do |spec|
+#   spec.libs << 'lib' << 'spec'
+#   spec.pattern = 'spec/**/*_spec.rb'
+#   spec.rcov = true
+#   spec.rcov_opts << '--exclude \/Library\/' << '--exclude /\.gem\/'
+# end
+
+# task :spec => :check_dependencies
+# 
+# task :default => :spec
+
 require 'rake/rdoctask'
-
-task :default => [:test]
-
-Rake::TestTask.new do |t|
-  t.verbose = true
-  t.warning = true
-  t.pattern = 'test/*_test.rb'
-end
-
-PKG_VERSION = "0.3.0"
-PKG_FILES = FileList[
-  'MIT-LICENSE',
-  'README.rdoc',
-  'Rakefile',
-  'lib/**/*.rb',
-  'test/**/test_*.rb'
-]
-
-spec = Gem::Specification.new do |s|
-  s.name = "workflow"
-  s.version = PKG_VERSION
-  s.author = "Vladimir Dobriakov"
-  s.email = "vladimir@geekq.net"
-  s.homepage = "http://blog.geekQ.net/"
-  s.platform = Gem::Platform::RUBY
-  s.summary = "A replacement for acts_as_state_machine."
-  s.files = PKG_FILES.to_a
-  s.require_path = "lib"
-end
-
 Rake::RDocTask.new do |rdoc|
-  rdoc.main = "README"
-  rdoc.rdoc_files.include("README.rdoc", "lib/**/*.rb")
-  rdoc.options << "-S"
+  version = File.exist?('VERSION') ? File.read('VERSION') : ""
+
+  rdoc.rdoc_dir = 'rdoc'
+  rdoc.title = "Apollo #{version}"
+  rdoc.rdoc_files.include('README*', 'MIT-LICENSE', 'LICENSE', 'VERSION')
+  rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
-package_task = Rake::GemPackageTask.new(spec) do |pkg|
-  pkg.need_zip = true
-  pkg.need_tar_gz = true
-end
+task :clobber => [:clobber_rcov, :clobber_rdoc]
