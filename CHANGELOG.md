@@ -1,6 +1,11 @@
 Apollo Changelog
 ================
 
+1.1
+
+* Added state sets. (7498cf0)
+* Unbranded methods. E.g. `Apollo::apollo` -> `Apollo::state_machine` (f8b42b8)
+
 1.0
 ---
 This is an initial release of the Apollo fork from [Workflow](http://github.com/geekq/workflow).  The reason I decided to fork Workflow, and in particular change the name, is because I feel that Workflow is an excellent starting point for my needs; however, my desire for Apollo is somewhat different from the desires of the creators of Workflow.  **In no way is my fork (and renaming) intended to be any kind of insult or intellectual rights infringement.**  I chose Workflow for the basis of Apollo because I feel it is the **best** state machine gem available.  I will most certainly maintain the original MIT-LICENSE as apart of Apollo so long as *any* portion of the code is derived from Workflow (which I suspect will always be the case).
