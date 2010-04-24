@@ -1,59 +1,13 @@
 require 'rubygems'
 
 module Workflow
-
-  class Specification
-
-    attr_accessor :states, :initial_state, :meta, :on_transition_proc
-
-    def initialize(meta = {}, &specification)
-      @states = Hash.new
-      @meta = meta
-      instance_eval(&specification)
-    end
-
-    private
-
-    def state(name, meta = {:meta => {}}, &events_and_etc)
-      # meta[:meta] to keep the API consistent..., gah
-      new_state = State.new(name, meta[:meta])
-      @initial_state = new_state if @states.empty?
-      @states[name.to_sym] = new_state
-      @scoped_state = new_state
-      instance_eval(&events_and_etc) if events_and_etc
-    end
-
-    def event(name, args = {}, &action)
-      target = args[:transitions_to] || args[:transition_to]
-      raise WorkflowDefinitionError.new(
-        "missing ':transitions_to' in workflow event definition for '#{name}'") \
-        if target.nil?
-      @scoped_state.events[name.to_sym] =
-        Event.new(name, target, (args[:meta] or {}), &action)
-    end
-
-    def on_entry(&proc)
-      @scoped_state.on_entry = proc
-    end
-
-    def on_exit(&proc)
-      @scoped_state.on_exit = proc
-    end
-
-    def on_transition(&proc)
-      @on_transition_proc = proc
-    end
-  end
-
   class TransitionHalted < Exception
-
     attr_reader :halted_because
 
     def initialize(msg = nil)
       @halted_because = msg
       super msg
     end
-
   end
 
   class NoTransitionAllowed < Exception; end
@@ -61,35 +15,8 @@ module Workflow
   class WorkflowError < Exception; end
 
   class WorkflowDefinitionError < Exception; end
-
-  class State
-
-    attr_accessor :name, :events, :meta, :on_entry, :on_exit
-
-    def initialize(name, meta = {})
-      @name, @events, @meta = name, Hash.new, meta
-    end
-
-    def to_s
-      "#{name}"
-    end
-
-    def to_sym
-      name.to_sym
-    end
-  end
-
-  class Event
-
-    attr_accessor :name, :transitions_to, :meta, :action
-
-    def initialize(name, transitions_to, meta = {}, &action)
-      @name, @transitions_to, @meta, @action = name, transitions_to.to_sym, meta, action
-    end
-
-  end
-
-  module WorkflowClassMethods
+  
+  module ClassMethods
     attr_reader :workflow_spec
     
     def workflow_column(column_name=nil)
@@ -123,7 +50,7 @@ module Workflow
     end
   end
 
-  module WorkflowInstanceMethods
+  module InstanceMethods
     def current_state
       loaded_state = load_workflow_state
       res = spec.states[loaded_state.to_sym] if loaded_state
@@ -248,29 +175,6 @@ module Workflow
 
     def persist_workflow_state(new_value)
       @workflow_state = new_value
-    end
-  end
-
-  module ActiveRecordInstanceMethods
-    def load_workflow_state
-      read_attribute(self.class.workflow_column)
-    end
-
-    # On transition the new workflow state is immediately saved in the
-    # database.
-    def persist_workflow_state(new_value)
-      update_attribute self.class.workflow_column, new_value
-    end
-
-    private
-
-    # Motivation: even if NULL is stored in the workflow_state database column,
-    # the current_state is correctly recognized in the Ruby code. The problem
-    # arises when you want to SELECT records filtering by the value of initial
-    # state. That's why it is important to save the string with the name of the
-    # initial state in all the new records.
-    def write_initial_state
-      write_attribute self.class.workflow_column, current_state.to_s
     end
   end
 
