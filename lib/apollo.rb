@@ -185,8 +185,8 @@ module Apollo
   end
 
   def self.included(klass)
-    klass.send :include, ApolloInstanceMethods
-    klass.extend ApolloClassMethods
+    klass.send :include, InstanceMethods
+    klass.extend ClassMethods
     if Object.const_defined?(:ActiveRecord)
       if klass < ActiveRecord::Base
       klass.send :include, ActiveRecordInstanceMethods
