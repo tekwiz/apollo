@@ -1,4 +1,4 @@
-module Workflow
+module Apollo
   class State
     attr_accessor :name, :events, :meta, :on_entry, :on_exit
 

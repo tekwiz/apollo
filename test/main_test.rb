@@ -3,21 +3,21 @@ require File.join(File.dirname(__FILE__), 'test_helper')
 $VERBOSE = false
 require 'active_record'
 require 'sqlite3'
-require 'workflow'
+require 'apollo'
 require 'mocha'
 #require 'ruby-debug'
 
 ActiveRecord::Migration.verbose = false
 
 class Order < ActiveRecord::Base
-  include Workflow
-  workflow do
+  include Apollo
+  apollo do
     state :submitted do
-      event :accept, :transitions_to => :accepted, :meta => {:doc_weight => 8} do |reviewer, args|
+      event :accept, :to => :accepted, :meta => {:doc_weight => 8} do |reviewer, args|
       end
     end
     state :accepted do
-      event :ship, :transitions_to => :shipped
+      event :ship, :to => :shipped
     end
     state :shipped
   end
@@ -25,17 +25,17 @@ class Order < ActiveRecord::Base
 end
 
 class LegacyOrder < ActiveRecord::Base
-  include Workflow
+  include Apollo
 
-  workflow_column :foo_bar # use this legacy database column for persistence
+  apollo_column :foo_bar # use this legacy database column for persistence
 
-  workflow do
+  apollo do
     state :submitted do
-      event :accept, :transitions_to => :accepted, :meta => {:doc_weight => 8} do |reviewer, args|
+      event :accept, :to => :accepted, :meta => {:doc_weight => 8} do |reviewer, args|
       end
     end
     state :accepted do
-      event :ship, :transitions_to => :shipped
+      event :ship, :to => :shipped
     end
     state :shipped
   end
@@ -59,11 +59,11 @@ class MainTest < Test::Unit::TestCase
     ActiveRecord::Schema.define do
       create_table :orders do |t|
         t.string :title, :null => false
-        t.string :workflow_state
+        t.string :apollo_state
       end
     end
 
-    exec "INSERT INTO orders(title, workflow_state) VALUES('some order', 'accepted')"
+    exec "INSERT INTO orders(title, apollo_state) VALUES('some order', 'accepted')"
 
     ActiveRecord::Schema.define do
       create_table :legacy_orders do |t|
@@ -82,23 +82,23 @@ class MainTest < Test::Unit::TestCase
 
   def assert_state(title, expected_state, klass = Order)
     o = klass.find_by_title(title)
-    assert_equal expected_state, o.read_attribute(klass.workflow_column)
+    assert_equal expected_state, o.read_attribute(klass.apollo_column)
     o
   end
 
-  test 'immediately save the new workflow_state on state machine transition' do
+  test 'immediately save the new apollo_state on state machine transition' do
     o = assert_state 'some order', 'accepted'
     o.ship!
     assert_state 'some order', 'shipped'
   end
 
-  test 'immediately save the new workflow_state on state machine transition with custom column name' do
+  test 'immediately save the new apollo_state on state machine transition with custom column name' do
     o = assert_state 'some order', 'accepted', LegacyOrder
     o.ship!
     assert_state 'some order', 'shipped', LegacyOrder
   end
 
-  test 'persist workflow_state in the db and reload' do
+  test 'persist apollo_state in the db and reload' do
     o = assert_state 'some order', 'accepted'
     assert_equal :accepted, o.current_state.name
     o.ship!
@@ -107,10 +107,10 @@ class MainTest < Test::Unit::TestCase
     assert_state 'some order', 'shipped'
 
     o.reload
-    assert_equal 'shipped', o.read_attribute(:workflow_state)
+    assert_equal 'shipped', o.read_attribute(:apollo_state)
   end
 
-  test 'persist workflow_state in the db with_custom_name and reload' do
+  test 'persist apollo_state in the db with_custom_name and reload' do
     o = assert_state 'some order', 'accepted', LegacyOrder
     assert_equal :accepted, o.current_state.name
     o.ship!
@@ -122,18 +122,18 @@ class MainTest < Test::Unit::TestCase
     assert_equal 'shipped', o.read_attribute(:foo_bar)
   end
 
-  test 'default workflow column should be workflow_state' do
+  test 'default apollo column should be apollo_state' do
     o = assert_state 'some order', 'accepted'
-    assert_equal :workflow_state, o.class.workflow_column
+    assert_equal :apollo_state, o.class.apollo_column
   end
 
-  test 'custom workflow column should be foo_bar' do
+  test 'custom apollo column should be foo_bar' do
     o = assert_state 'some order', 'accepted', LegacyOrder
-    assert_equal :foo_bar, o.class.workflow_column
+    assert_equal :foo_bar, o.class.apollo_column
   end
 
-  test 'access workflow specification' do
-    assert_equal 3, Order.workflow_spec.states.length
+  test 'access apollo specification' do
+    assert_equal 3, Order.apollo_spec.states.length
   end
 
   test 'current state object' do
@@ -148,10 +148,10 @@ class MainTest < Test::Unit::TestCase
     callbacks.expects(:my_on_exit_new).once
     callbacks.expects(:my_on_entry_old).once
     c.class_eval do
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :new do
-          event :age, :transitions_to => :old
+          event :age, :to => :old
         end
         on_exit do
           callbacks.my_on_exit_new
@@ -176,10 +176,10 @@ class MainTest < Test::Unit::TestCase
     callbacks.expects(:on_tran).once # this is validated at the end
     c = Class.new
     c.class_eval do
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :one do
-          event :increment, :transitions_to => :two
+          event :increment, :to => :two
         end
         state :two
         on_transition do |from, to, triggering_event, *event_args|
@@ -187,41 +187,41 @@ class MainTest < Test::Unit::TestCase
         end
       end
     end
-    assert_not_nil c.workflow_spec.on_transition_proc
+    assert_not_nil c.apollo_spec.on_transition_proc
     c.new.increment!
   end
 
   test 'access event meta information' do
     c = Class.new
     c.class_eval do
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :main, :meta => {:importance => 8}
         state :supplemental, :meta => {:importance => 1}
       end
     end
-    assert_equal 1, c.workflow_spec.states[:supplemental].meta[:importance]
+    assert_equal 1, c.apollo_spec.states[:supplemental].meta[:importance]
   end
 
   test 'initial state' do
     c = Class.new
     c.class_eval do
-      include Workflow
-      workflow { state :one; state :two }
+      include Apollo
+      apollo { state :one; state :two }
     end
     assert_equal 'one', c.new.current_state.to_s
   end
 
   test 'nil as initial state' do
-    exec "INSERT INTO orders(title, workflow_state) VALUES('nil state', NULL)"
+    exec "INSERT INTO orders(title, apollo_state) VALUES('nil state', NULL)"
     o = Order.find_by_title('nil state')
-    assert o.submitted?, 'if workflow_state is nil, the initial state should be assumed'
+    assert o.submitted?, 'if apollo_state is nil, the initial state should be assumed'
     assert !o.shipped?
   end
 
   test 'initial state immediately set as ActiveRecord attribute for new objects' do
     o = Order.create(:title => 'new object')
-    assert_equal 'submitted', o.read_attribute(:workflow_state)
+    assert_equal 'submitted', o.read_attribute(:apollo_state)
   end
 
   test 'question methods for state' do
@@ -232,7 +232,7 @@ class MainTest < Test::Unit::TestCase
 
   test 'correct exception for event, that is not allowed in current state' do
     o = assert_state 'some order', 'accepted'
-    assert_raise Workflow::NoTransitionAllowed do
+    assert_raise Apollo::NoTransitionAllowed do
       o.accept!
     end
   end
@@ -244,13 +244,13 @@ class MainTest < Test::Unit::TestCase
     args.expects(:my_tran).once # this is validated at the end
     c = Class.new
     c.class_eval do
-      include Workflow
+      include Apollo
       def my_transition(args)
         args.my_tran
       end
-      workflow do
+      apollo do
         state :one do
-          event :my_transition, :transitions_to => :two
+          event :my_transition, :to => :two
         end
         state :two
       end
@@ -277,12 +277,12 @@ class MainTest < Test::Unit::TestCase
     assert EvenBiggerOrder.new.submitted?
   end
 
-  test 'Iheritance with workflow definition override' do
+  test 'Iheritance with apollo definition override' do
     class BigOrder < Order
     end
 
     class SpecialBigOrder < BigOrder
-      workflow do
+      apollo do
         state :start_big
       end
     end
@@ -293,14 +293,14 @@ class MainTest < Test::Unit::TestCase
 
   test 'Better error message for missing target state' do
     class Problem
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :initial do
-          event :solve, :transitions_to => :solved
+          event :solve, :to => :solved
         end
       end
     end
-    assert_raise Workflow::WorkflowError do
+    assert_raise Apollo::ApolloError do
       Problem.new.solve!
     end
   end
@@ -326,14 +326,14 @@ class MainTest < Test::Unit::TestCase
   test 'on_entry and on_exit hooks in separate methods' do
     c = Class.new
     c.class_eval do
-      include Workflow
+      include Apollo
       attr_reader :history
       def initialize
         @history = []
       end
-      workflow do
+      apollo do
         state :new do
-          event :next, :transitions_to => :next_state
+          event :next, :to => :next_state
         end
         state :next_state
       end
@@ -358,7 +358,7 @@ class MainTest < Test::Unit::TestCase
   test 'diagram generation' do
     begin
       $stdout = StringIO.new('', 'w')
-      Workflow::create_workflow_diagram(Order, 'doc')
+      Apollo::create_apollo_diagram(Order, 'doc')
       assert_match(/open.+\.pdf/, $stdout.string,
         'PDF should be generate and a hint be given to the user.')
     ensure
@@ -368,10 +368,10 @@ class MainTest < Test::Unit::TestCase
 
   test 'halt stops the transition' do
     c = Class.new do
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :young do
-          event :age, :transitions_to => :old
+          event :age, :to => :old
         end
         state :old
       end
@@ -390,10 +390,10 @@ class MainTest < Test::Unit::TestCase
 
   test 'halt! raises exception' do
     article_class = Class.new do
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :new do
-          event :reject, :transitions_to => :rejected
+          event :reject, :to => :rejected
         end
         state :rejected
       end
@@ -406,7 +406,7 @@ class MainTest < Test::Unit::TestCase
 
     article = article_class.new
     assert article.new?
-    assert_raise Workflow::TransitionHalted do
+    assert_raise Apollo::TransitionHalted do
       article.reject! 'Too funny'
     end
     assert article.new?, 'Transition should have been halted'

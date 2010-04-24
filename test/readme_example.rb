@@ -1,16 +1,16 @@
-require 'workflow'
+require 'apollo'
 class Article
-  include Workflow
-  workflow do
+  include Apollo
+  apollo do
     state :new do
-      event :submit, :transitions_to => :awaiting_review
+      event :submit, :to => :awaiting_review
     end
     state :awaiting_review do
-      event :review, :transitions_to => :being_reviewed
+      event :review, :to => :being_reviewed
     end
     state :being_reviewed do
-      event :accept, :transitions_to => :accepted
-      event :reject, :transitions_to => :rejected
+      event :accept, :to => :accepted
+      event :reject, :to => :rejected
     end
     state :accepted
     state :rejected

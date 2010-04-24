@@ -1,4 +1,4 @@
-module Workflow
+module Apollo
   class Specification
     attr_accessor :states, :initial_state, :meta, :on_transition_proc
 
@@ -20,9 +20,9 @@ module Workflow
     end
 
     def event(name, args = {}, &action)
-      target = args[:transitions_to] || args[:transition_to]
-      raise WorkflowDefinitionError.new(
-        "missing ':transitions_to' in workflow event definition for '#{name}'") \
+      target = args[:to] || args[:to]
+      raise ApolloDefinitionError.new(
+        "missing ':to' in apollo event definition for '#{name}'") \
         if target.nil?
       @scoped_state.events[name.to_sym] =
         Event.new(name, target, (args[:meta] or {}), &action)

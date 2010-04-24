@@ -1,6 +1,12 @@
-require 'rubygems'
-
-module Workflow
+module Apollo
+  autoload :Event,                        'apollo/event'
+  autoload :State,                        'apollo/state'
+  autoload :Specification,                'apollo/specification'
+  autoload :ActiveRecordInstanceMethods,  'apollo/active_record_instance_methods'
+  
+  # The current version
+  VERSION = File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..', 'VERSION')).strip
+  
   class TransitionHalted < Exception
     attr_reader :halted_because
 
@@ -12,25 +18,25 @@ module Workflow
 
   class NoTransitionAllowed < Exception; end
 
-  class WorkflowError < Exception; end
+  class ApolloError < Exception; end
 
-  class WorkflowDefinitionError < Exception; end
+  class ApolloDefinitionError < Exception; end
   
   module ClassMethods
-    attr_reader :workflow_spec
+    attr_reader :apollo_spec
     
-    def workflow_column(column_name=nil)
+    def apollo_column(column_name=nil)
       if column_name
-        @workflow_state_column_name = column_name.to_sym
+        @apollo_state_column_name = column_name.to_sym
       else
-        @workflow_state_column_name ||= :workflow_state
+        @apollo_state_column_name ||= :apollo_state
       end
-      @workflow_state_column_name
+      @apollo_state_column_name
     end
 
-    def workflow(&specification)
-      @workflow_spec = Specification.new(Hash.new, &specification)
-      @workflow_spec.states.values.each do |state|
+    def apollo(&specification)
+      @apollo_spec = Specification.new(Hash.new, &specification)
+      @apollo_spec.states.values.each do |state|
         state_name = state.name
         module_eval do
           define_method "#{state_name}?" do
@@ -52,7 +58,7 @@ module Workflow
 
   module InstanceMethods
     def current_state
-      loaded_state = load_workflow_state
+      loaded_state = load_apollo_state
       res = spec.states[loaded_state.to_sym] if loaded_state
       res || spec.initial_state
     end
@@ -70,7 +76,7 @@ module Workflow
       raise NoTransitionAllowed.new(
         "There is no event #{name.to_sym} defined for the #{current_state} state") \
         if event.nil?
-      # This three member variables are a relict from the old workflow library
+      # This three member variables are a relict from the old apollo library
       # TODO: refactor some day
       @halted_because = nil
       @halted = false
@@ -84,8 +90,8 @@ module Workflow
         end
       else
         check_transition(event)
-        run_on_transition(current_state, spec.states[event.transitions_to], name, *args)
-        transition(current_state, spec.states[event.transitions_to], name, *args)
+        run_on_transition(current_state, spec.states[event.to], name, *args)
+        transition(current_state, spec.states[event.to], name, *args)
         return_value
       end
     end
@@ -96,9 +102,9 @@ module Workflow
       # Create a meaningful error message instead of
       # "undefined method `on_entry' for nil:NilClass"
       # Reported by Kyle Burton
-      if !spec.states[event.transitions_to]
-        raise WorkflowError.new("Event[#{event.name}]'s " +
-            "transitions_to[#{event.transitions_to}] is not a declared state.")
+      if !spec.states[event.to]
+        raise ApolloError.new("Event[#{event.name}]'s " +
+            "to[#{event.to}] is not a declared state.")
       end
     end
 
@@ -106,10 +112,10 @@ module Workflow
       c = self.class
       # using a simple loop instead of class_inheritable_accessor to avoid
       # dependency on Rails' ActiveSupport
-      until c.workflow_spec || !(c.include? Workflow)
+      until c.apollo_spec || !(c.include? Apollo)
         c = c.superclass
       end
-      c.workflow_spec
+      c.apollo_spec
     end
 
     def halt(reason = nil)
@@ -126,7 +132,7 @@ module Workflow
 
     def transition(from, to, name, *args)
       run_on_exit(from, to, name, *args)
-      persist_workflow_state to.to_s
+      persist_apollo_state to.to_s
       run_on_entry(to, from, name, *args)
     end
 
@@ -162,25 +168,25 @@ module Workflow
       end
     end
 
-    # load_workflow_state and persist_workflow_state
-    # can be overriden to handle the persistence of the workflow state.
+    # load_apollo_state and persist_apollo_state
+    # can be overriden to handle the persistence of the apollo state.
     #
     # Default (non ActiveRecord) implementation stores the current state
     # in a variable.
     #
-    # Default ActiveRecord implementation uses a 'workflow_state' database column.
-    def load_workflow_state
-      @workflow_state if instance_variable_defined? :@workflow_state
+    # Default ActiveRecord implementation uses a 'apollo_state' database column.
+    def load_apollo_state
+      @apollo_state if instance_variable_defined? :@apollo_state
     end
 
-    def persist_workflow_state(new_value)
-      @workflow_state = new_value
+    def persist_apollo_state(new_value)
+      @apollo_state = new_value
     end
   end
 
   def self.included(klass)
-    klass.send :include, WorkflowInstanceMethods
-    klass.extend WorkflowClassMethods
+    klass.send :include, ApolloInstanceMethods
+    klass.extend ApolloClassMethods
     if Object.const_defined?(:ActiveRecord)
       if klass < ActiveRecord::Base
       klass.send :include, ActiveRecordInstanceMethods
@@ -189,44 +195,44 @@ module Workflow
     end
   end
 
-  # Generates a `dot` graph of the workflow.
+  # Generates a `dot` graph of the apollo.
   # Prerequisite: the `dot` binary.
   # You can use it in your own Rakefile like this:
   #
   #     namespace :doc do
-  #       desc "Generate a graph of the workflow."
-  #       task :workflow do
-  #         Workflow::create_workflow_diagram(Order.new)
+  #       desc "Generate a graph of the apollo."
+  #       task :apollo do
+  #         Apollo::create_apollo_diagram(Order.new)
   #       end
   #     end
   #
   # You can influence the placement of nodes by specifying
   # additional meta information in your states and transition descriptions.
   # You can assign higher `doc_weight` value to the typical transitions
-  # in your workflow. All other states and transitions will be arranged
+  # in your apollo. All other states and transitions will be arranged
   # around that main line. See also `weight` in the graphviz documentation.
   # Example:
   #
   #     state :new do
-  #       event :approve, :transitions_to => :approved, :meta => {:doc_weight => 8}
+  #       event :approve, :to => :approved, :meta => {:doc_weight => 8}
   #     end
   #
   #
-  # @param klass A class with the Workflow mixin, for which you wish the graphical workflow representation
+  # @param klass A class with the Apollo mixin, for which you wish the graphical apollo representation
   # @param [String] target_dir Directory, where to save the dot and the pdf files
   # @param [String] graph_options You can change graph orientation, size etc. See graphviz documentation
-  def self.create_workflow_diagram(klass, target_dir, graph_options='rankdir="LR", size="7,11.6", ratio="fill"')
-    workflow_name = "#{klass.name.tableize}_workflow"
-    fname = File.join(target_dir, "generated_#{workflow_name}")
+  def self.create_apollo_diagram(klass, target_dir, graph_options='rankdir="LR", size="7,11.6", ratio="fill"')
+    apollo_name = "#{klass.name.tableize}_apollo"
+    fname = File.join(target_dir, "generated_#{apollo_name}")
     File.open("#{fname}.dot", 'w') do |file|
       file.puts %Q|
-digraph #{workflow_name} {
+digraph #{apollo_name} {
   graph [#{graph_options}];
   node [shape=box];
   edge [len=1];
       |
 
-      klass.workflow_spec.states.each do |state_name, state|
+      klass.apollo_spec.states.each do |state_name, state|
         file.puts %Q{  #{state.name} [label="#{state.name}"];}
         state.events.each do |event_name, event|
           meta_info = event.meta
@@ -235,7 +241,7 @@ digraph #{workflow_name} {
           else
             weight_prop = ''
           end
-          file.puts %Q{  #{state.name} -> #{event.transitions_to} [label="#{event_name.to_s.humanize}" #{weight_prop}];}
+          file.puts %Q{  #{state.name} -> #{event.to} [label="#{event_name.to_s.humanize}" #{weight_prop}];}
         end
       end
       file.puts "}"

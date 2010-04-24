@@ -1,19 +1,19 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
-require 'workflow'
+require 'apollo'
 
-class WithoutWorkflowTest < Test::Unit::TestCase
+class WithoutApolloTest < Test::Unit::TestCase
   class Article
-    include Workflow
-    workflow do
+    include Apollo
+    apollo do
       state :new do
-        event :submit, :transitions_to => :awaiting_review
+        event :submit, :to => :awaiting_review
       end
       state :awaiting_review do
-        event :review, :transitions_to => :being_reviewed
+        event :review, :to => :being_reviewed
       end
       state :being_reviewed do
-        event :accept, :transitions_to => :accepted
-        event :reject, :transitions_to => :rejected
+        event :accept, :to => :accepted
+        event :reject, :to => :rejected
       end
       state :accepted
       state :rejected
@@ -25,13 +25,13 @@ class WithoutWorkflowTest < Test::Unit::TestCase
     assert article.new?
   end
 
-  test 'better error message on transitions_to typo' do
-    assert_raise Workflow::WorkflowDefinitionError do
+  test 'better error message on to typo' do
+    assert_raise Apollo::ApolloDefinitionError do
       Class.new do
-        include Workflow
-        workflow do
+        include Apollo
+        apollo do
           state :new do
-            event :event1, :transitionnn => :next # missing transitions_to target
+            event :event1, :transitionnn => :next # missing to target
           end
           state :next
         end
@@ -41,8 +41,8 @@ class WithoutWorkflowTest < Test::Unit::TestCase
 
   test 'check transition_to alias' do
     Class.new do
-      include Workflow
-      workflow do
+      include Apollo
+      apollo do
         state :new do
           event :event1, :transition_to => :next
         end
