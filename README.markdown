@@ -1,3 +1,15 @@
+What is apollo?
+===============
+
+> In Greek and Roman mythology, Apollo (in Greek, Ἀπόλλων—Apóllōn or Ἀπέλλων—Apellōn), 
+> is one of the most important and diverse of the Olympian deities. The ideal of the 
+> kouros (a beardless youth), Apollo has been variously recognized as a god of light 
+> and the sun; truth and prophecy; archery; medicine, healing and plague; music, 
+> poetry, and the arts; and more. Apollo is the son of Zeus and Leto, and has a twin 
+> sister, the chaste huntress Artemis. [Wikipedia: Dionysus (2010/04/23)](http://en.wikipedia.org/wiki/Apollo)
+
+Apollo is an fork of workflow.
+
 What is workflow?
 -----------------
 
