@@ -29,7 +29,7 @@ module Apollo
       if column_name
         @apollo_state_column_name = column_name.to_sym
       else
-        @apollo_state_column_name ||= :apollo_state
+        @apollo_state_column_name ||= :current_state
       end
       @apollo_state_column_name
     end
