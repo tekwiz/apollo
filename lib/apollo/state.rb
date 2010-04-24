@@ -1,9 +1,9 @@
 module Apollo
   class State
-    attr_accessor :name, :events, :meta, :on_entry, :on_exit
+    attr_accessor :name, :events, :meta, :on_entry, :on_exit, :sets
 
     def initialize(name, meta = {})
-      @name, @events, @meta = name, Hash.new, meta
+      @name, @events, @meta, @sets = name, Hash.new, meta, Set.new
     end
 
     def to_s

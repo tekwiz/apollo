@@ -70,6 +70,14 @@ module Apollo
           end
         end
       end
+      
+      @apollo_spec.state_sets.keys.each do |set_name|
+        module_eval do
+          define_method "#{set_name}?" do
+            current_state.sets.include?(set_name)
+          end
+        end
+      end
     end
   end
 

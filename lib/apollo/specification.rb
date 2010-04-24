@@ -1,9 +1,10 @@
 module Apollo
   class Specification
-    attr_accessor :states, :initial_state, :meta, :on_transition_proc
+    attr_accessor :states, :initial_state, :meta, :on_transition_proc, :state_sets
 
     def initialize(meta = {}, &specification)
       @states = Hash.new
+      @state_sets = Hash.new
       @meta = meta
       instance_eval(&specification)
     end
@@ -11,12 +12,29 @@ module Apollo
     private
 
     def state(name, meta = {:meta => {}}, &events_and_etc)
+      validate_state_name(name)
+      
       # meta[:meta] to keep the API consistent..., gah
       new_state = State.new(name, meta[:meta])
       @initial_state = new_state if @states.empty?
       @states[name.to_sym] = new_state
       @scoped_state = new_state
       instance_eval(&events_and_etc) if events_and_etc
+    end
+    
+    def state_set(name, *state_names)
+      validate_state_set_name(name)
+      
+      set = Set.new
+      state_names.each do |state_name|
+        if state = @states[state_name]
+          set << state
+          state.sets << name
+        else
+          raise ApolloDefinitionError, "Unknown state: #{state}"
+        end
+      end
+      @state_sets[name] = set
     end
 
     def event(name, args = {}, &action)
@@ -38,6 +56,18 @@ module Apollo
 
     def on_transition(&proc)
       @on_transition_proc = proc
+    end
+    
+    def validate_state_name(name)
+      if @state_sets[name]
+        raise ApolloDefinitionError, "State name conflicts with state set name: #{name}"
+      end
+    end
+    
+    def validate_state_set_name(name)
+      if @states[name]
+        raise ApolloDefinitionError, "State set name conflicts with state name: #{name}"
+      end
     end
   end
 end
