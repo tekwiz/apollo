@@ -41,7 +41,7 @@ Rake::RDocTask.new do |rdoc|
 
   rdoc.rdoc_dir = 'rdoc'
   rdoc.title = "Apollo #{version}"
-  rdoc.rdoc_files.include('README*', 'MIT-LICENSE', 'LICENSE', 'VERSION')
+  rdoc.rdoc_files.include('README*', 'MIT-LICENSE', 'LICENSE', 'VERSION', 'CHANGELOG.md')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
