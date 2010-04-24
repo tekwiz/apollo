@@ -17,9 +17,12 @@ Gem::Specification.new do |s|
   ]
   s.files = [
     ".gitignore",
+     "LICENSE",
      "MIT-LICENSE",
      "README.markdown",
      "Rakefile",
+     "VERSION",
+     "apollo.gemspec",
      "lib/apollo.rb",
      "lib/apollo/active_record_instance_methods.rb",
      "lib/apollo/event.rb",
@@ -35,7 +38,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.6}
-  s.summary = %q{A fork of apollo: a finite-state-machine-inspired API for modeling and interacting with what we tend to refer to as 'apollo'.}
+  s.summary = %q{A fork of workflow: a finite-state-machine-inspired API for modeling and interacting with what we tend to refer to as 'workflow'.}
   s.test_files = [
     "test/couchtiny_example.rb",
      "test/main_test.rb",
