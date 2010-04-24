@@ -40,18 +40,18 @@ module Apollo
   class ApolloDefinitionError < Exception; end
   
   module ClassMethods
-    attr_reader :apollo_spec
-    
-    def apollo_column(column_name=nil)
+    def current_state_column(column_name=nil)
       if column_name
-        @apollo_state_column_name = column_name.to_sym
+        @current_state_column_name = column_name.to_sym
       else
-        @apollo_state_column_name ||= :current_state
+        @current_state_column_name ||= :current_state
       end
-      @apollo_state_column_name
+      @current_state_column_name
     end
 
-    def apollo(&specification)
+    def state_machine(&specification)
+      return @apollo_spec unless block_given?
+      
       @apollo_spec = Specification.new(Hash.new, &specification)
       @apollo_spec.states.values.each do |state|
         state_name = state.name
@@ -83,7 +83,7 @@ module Apollo
 
   module InstanceMethods
     def current_state
-      loaded_state = load_apollo_state
+      loaded_state = load_current_state
       res = spec.states[loaded_state.to_sym] if loaded_state
       res || spec.initial_state
     end
@@ -101,7 +101,7 @@ module Apollo
       raise NoTransitionAllowed.new(
         "There is no event #{name.to_sym} defined for the #{current_state} state") \
         if event.nil?
-      # This three member variables are a relict from the old apollo library
+      # This three member variables are a relict from the old workflow library
       # TODO: refactor some day
       @halted_because = nil
       @halted = false
@@ -137,10 +137,10 @@ module Apollo
       c = self.class
       # using a simple loop instead of class_inheritable_accessor to avoid
       # dependency on Rails' ActiveSupport
-      until c.apollo_spec || !(c.include? Apollo)
+      until c.state_machine || !(c.include? Apollo)
         c = c.superclass
       end
-      c.apollo_spec
+      c.state_machine
     end
 
     def halt(reason)
@@ -162,7 +162,7 @@ module Apollo
 
     def transition(from, to, name, *args)
       run_on_exit(from, to, name, *args)
-      persist_apollo_state to.to_s
+      persist_current_state to.to_s
       run_on_entry(to, from, name, *args)
     end
 
@@ -198,19 +198,19 @@ module Apollo
       end
     end
 
-    # load_apollo_state and persist_apollo_state
-    # can be overriden to handle the persistence of the apollo state.
+    # load_current_state and persist_current_state
+    # can be overriden to handle the persistence of the current state.
     #
     # Default (non ActiveRecord) implementation stores the current state
     # in a variable.
     #
-    # Default ActiveRecord implementation uses a 'apollo_state' database column.
-    def load_apollo_state
-      @apollo_state if instance_variable_defined? :@apollo_state
+    # Default ActiveRecord implementation uses a 'current_state' database column.
+    def load_current_state
+      @current_state if instance_variable_defined? :@current_state
     end
 
-    def persist_apollo_state(new_value)
-      @apollo_state = new_value
+    def persist_current_state(new_value)
+      @current_state = new_value
     end
   end
 
@@ -225,21 +225,21 @@ module Apollo
     end
   end
 
-  # Generates a `dot` graph of the apollo.
+  # Generates a `dot` graph of the state machine.
   # Prerequisite: the `dot` binary.
   # You can use it in your own Rakefile like this:
   #
   #     namespace :doc do
-  #       desc "Generate a graph of the apollo."
-  #       task :apollo do
-  #         Apollo::create_apollo_diagram(Order.new)
+  #       desc "Generate a graph of the state machine."
+  #       task :state_machine do
+  #         Apollo::create_state_diagram(Order.new)
   #       end
   #     end
   #
   # You can influence the placement of nodes by specifying
   # additional meta information in your states and transition descriptions.
   # You can assign higher `doc_weight` value to the typical transitions
-  # in your apollo. All other states and transitions will be arranged
+  # in your state machine. All other states and transitions will be arranged
   # around that main line. See also `weight` in the graphviz documentation.
   # Example:
   #
@@ -248,21 +248,21 @@ module Apollo
   #     end
   #
   #
-  # @param klass A class with the Apollo mixin, for which you wish the graphical apollo representation
+  # @param klass A class with the Apollo mixin, for which you wish the graphical state machine representation
   # @param [String] target_dir Directory, where to save the dot and the pdf files
   # @param [String] graph_options You can change graph orientation, size etc. See graphviz documentation
-  def self.create_apollo_diagram(klass, target_dir, graph_options='rankdir="LR", size="7,11.6", ratio="fill"')
-    apollo_name = "#{klass.name.tableize}_apollo"
-    fname = File.join(target_dir, "generated_#{apollo_name}")
+  def self.create_state_diagram(klass, target_dir, graph_options='rankdir="LR", size="7,11.6", ratio="fill"')
+    state_machine_name = "#{klass.name.tableize}_state_machine"
+    fname = File.join(target_dir, "generated_#{state_machine_name}")
     File.open("#{fname}.dot", 'w') do |file|
       file.puts %Q|
-digraph #{apollo_name} {
+digraph #{state_machine_name} {
   graph [#{graph_options}];
   node [shape=box];
   edge [len=1];
       |
 
-      klass.apollo_spec.states.each do |state_name, state|
+      klass.state_machine.states.each do |state_name, state|
         file.puts %Q{  #{state.name} [label="#{state.name}"];}
         state.events.each do |event_name, event|
           meta_info = event.meta
