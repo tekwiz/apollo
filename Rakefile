@@ -45,4 +45,4 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
-task :clobber => [:clobber_rcov, :clobber_rdoc]
+# task :clobber => [:clobber_rcov, :clobber_rdoc]
