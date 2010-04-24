@@ -8,7 +8,38 @@ What is apollo?
 > poetry, and the arts; and more. Apollo is the son of Zeus and Leto, and has a twin 
 > sister, the chaste huntress Artemis. [Wikipedia: Dionysus (2010/04/23)](http://en.wikipedia.org/wiki/Apollo)
 
-Apollo is an fork of workflow.
+Apollo is an fork of [Workflow](http://github.com/geekq/workflow).
+
+Resources
+---------
+
+* [Github Project](http://github.com/tekwiz/apollo)
+* [Rdocs on Rdoc.info](http://rdoc.info/projects/tekwiz/apollo)
+* [Wiki on Github](http://wiki.github.com/tekwiz/apollo/)
+* [Issues Tracker on Github](http://github.com/tekwiz/apollo/issues)
+* [Metrics on Caliper](http://getcaliper.com/caliper/project?repo=http%3A%2F%2Frubygems.org%2Fgems%2Fapollo)
+
+Features & Issues
+-----------------
+
+This is a brand new project, so if you find bugs or use cases that would helpful to satisfy, post an [Issue](http://github.com/tekwiz/apollo/issues) on Github.
+
+This project is intended to be a **very** eclectic mix of helpful tools, so please feel free to send pull requests.  That said, make **absolutely sure** your modifications are well tested.  The hodge-podge nature of this project may make it prone to issues, so no code will be pulled-in that is not __fully_tested__.
+
+Note on Patches/Pull Requests
+-----------------------------
+
+* Fork the project.
+* Make your feature addition or bug fix.
+* Add tests for it. This is important so I don't break it in a
+  future version unintentionally.
+* Commit, do not mess with rakefile, version, or history.
+  (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
+* Send me a pull request. Bonus points for topic branches.
+
+### Documentation Warning
+
+Beware that the below documentation has NOT been validated for the changes from Workflow to Apollo.
 
 What is workflow?
 -----------------
@@ -332,106 +363,47 @@ The whole event sequence is as follows:
     * PERSIST WORKFLOW STATE, i.e. transition
     * on_entry
 
-
 Documenting with diagrams
 -------------------------
 
 You can generate a graphical representation of your apollo for
 documentation purposes. S. Apollo::create_apollo_diagram.
 
+Copyright
+---------
+
+    Copyright 2010 Travis D. Warlick, Jr.
+    
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+    
+       http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+The original work from [Workflow](http://github.com/geekq/workflow)
+
+    Author: Vladimir Dobriakov, http://www.innoq.com/blog/vd, http://blog.geekq.net/
+
+    Copyright (c) 2008-2009 Vodafone
+
+    Copyright (c) 2007-2008 Ryan Allen, FlashDen Pty Ltd
+
+    Based on the work of Ryan Allen and Scott Barron
+
+    Licensed under MIT license, see the MIT-LICENSE file.
 
 Earlier versions
 ----------------
 
-The `apollo` library was originally written by Ryan Allen.
+The `workflow` library was originally written by Ryan Allen.
 
 The version 0.3 was almost completely (including ActiveRecord
 integration, API for accessing apollo specification, 
 method_missing free implementation) rewritten by Vladimir Dobriakov
 keeping the original apollo DSL spirit.
-
-
-Migration from the original Ryan's library
-------------------------------------------
-
-Credit: Michael (rockrep)
-
-Accessing apollo specification
-
-    my_instance.apollo # old
-    MyClass.apollo_spec # new
-
-Accessing states, events, meta, e.g.
-
-    my_instance.apollo.states(:some_state).events(:some_event).meta[:some_meta_tag] # old
-    MyClass.apollo_spec.states[:some_state].events[:some_event].meta[:some_meta_tag] # new
-
-Causing state transitions
-
-    my_instance.apollo.my_event # old
-    my_instance.my_event! # new
-
-when using both a block and a callback method for an event, the block executes prior to the callback
-
-
-Changelog
----------
-
-### New in the version 0.4.0
-
-* completely rewritten the documentation to match my branch. Every
-  described feature is backed up by an automated test.
-
-### New in the version 0.3.0
-
-Intermixing of transition graph definition (states, transitions)
-on the one side and implementation of the actions on the other side
-for a bigger state machine can introduce clutter.
-
-To reduce this clutter it is now possible to use state entry- and 
-exit- hooks defined through a naming convention. For example, if there
-is a state :pending, then instead of using a
-block:
-
-    state :pending do
-      on_entry do
-        # your implementation here
-      end
-    end
-
-you can hook in by defining method 
-
-    def on_pending_exit(new_state, event, *args)
-      # your implementation here
-    end
-
-anywhere in your class. You can also use a simpler function signature
-like `def on_pending_exit(*args)` if your are not interested in
-arguments.  Please note: `def on_pending_exit()` with an empty list
-would not work.
-
-If both a function with a name according to naming convention and the 
-on_entry/on_exit block are given, then only on_entry/on_exit block is used.
-
-
-Support
--------
-
-### Reporting bugs
-
-    http://github.com/geekq/apollo/issues
-
-
-About
------
-
-Author: Vladimir Dobriakov, http://www.innoq.com/blog/vd, http://blog.geekq.net/
-
-Copyright (c) 2008-2009 Vodafone
-
-Copyright (c) 2007-2008 Ryan Allen, FlashDen Pty Ltd
-
-Based on the work of Ryan Allen and Scott Barron
-
-Licensed under MIT license, see the MIT-LICENSE file.
-
