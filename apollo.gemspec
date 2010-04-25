@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{apollo}
-  s.version = "1.1.0"
+  s.version = "1.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis D. Warlick, Jr."]
@@ -25,10 +25,11 @@ Gem::Specification.new do |s|
      "VERSION",
      "apollo.gemspec",
      "lib/apollo.rb",
-     "lib/apollo/active_record_instance_methods.rb",
+     "lib/apollo/active_record_extensions.rb",
      "lib/apollo/event.rb",
      "lib/apollo/specification.rb",
      "lib/apollo/state.rb",
+     "lib/apollo/state_set.rb",
      "test/couchtiny_example.rb",
      "test/main_test.rb",
      "test/readme_example.rb",
