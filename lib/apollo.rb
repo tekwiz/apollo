@@ -16,10 +16,11 @@
 #     Copyright (c) 2008-2009 Vodafone
 #     Copyright (c) 2007-2008 Ryan Allen, FlashDen Pty Ltd
 module Apollo
-  autoload :Event,                        'apollo/event'
-  autoload :State,                        'apollo/state'
-  autoload :Specification,                'apollo/specification'
-  autoload :ActiveRecordInstanceMethods,  'apollo/active_record_instance_methods'
+  autoload :Event,                    'apollo/event'
+  autoload :State,                    'apollo/state'
+  autoload :StateSet,                 'apollo/state_set'
+  autoload :Specification,            'apollo/specification'
+  autoload :ActiveRecordExtensions,   'apollo/active_record_extensions'
   
   # The current version
   VERSION = File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..', 'VERSION')).strip
@@ -219,8 +220,9 @@ module Apollo
     klass.extend ClassMethods
     if Object.const_defined?(:ActiveRecord)
       if klass < ActiveRecord::Base
-      klass.send :include, ActiveRecordInstanceMethods
-      klass.before_validation :write_initial_state
+        klass.send :include, ActiveRecordExtensions::InstanceMethods
+        klass.extend ActiveRecordExtensions::ClassMethods
+        klass.before_validation :write_initial_state
       end
     end
   end
