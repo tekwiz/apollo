@@ -74,7 +74,7 @@ module Apollo
       @apollo_spec.state_sets.keys.each do |set_name|
         module_eval do
           define_method "#{set_name}?" do
-            current_state.sets.include?(set_name)
+            current_state.set_names.include?(set_name.to_sym)
           end
         end
       end

@@ -22,19 +22,23 @@ module Apollo
       instance_eval(&events_and_etc) if events_and_etc
     end
     
-    def state_set(name, *state_names)
-      validate_state_set_name(name)
+    def state_set(set_name, *state_names)
+      validate_state_set_name(set_name)
       
-      set = Set.new
+      state_names.flatten!
+      state_names.collect! {|n| n.to_sym}
+      state_names.uniq!
+      
+      set = StateSet.new
       state_names.each do |state_name|
         if state = @states[state_name]
           set << state
-          state.sets << name
+          state.set_names << set_name.to_sym
         else
-          raise ApolloDefinitionError, "Unknown state: #{state}"
+          raise ApolloDefinitionError, "Unknown state: #{state_name}"
         end
       end
-      @state_sets[name] = set
+      @state_sets[set_name] = set
     end
 
     def event(name, args = {}, &action)
