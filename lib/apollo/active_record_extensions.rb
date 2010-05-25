@@ -2,13 +2,22 @@ module Apollo
   module ActiveRecordExtensions
     module InstanceMethods
       def load_current_state
-        read_attribute(self.class.current_state_column)
+        if self.class.persist_string_state_name?
+          read_attribute(self.class.current_state_column)
+        else
+          self.class.state_id_to_name(read_attribute(self.class.current_state_id_column))
+        end
       end
 
       # On transition the new current state is immediately saved in the
       # database.
       def persist_current_state(new_value)
-        update_attribute self.class.current_state_column, new_value
+        if self.class.persist_string_state_name?
+          update_attribute self.class.current_state_column, new_value
+        else
+          update_attribute self.class.current_state_id_column, 
+                           self.class.state_name_to_id(new_value)
+        end
       end
 
       private
@@ -19,7 +28,12 @@ module Apollo
       # state. That's why it is important to save the string with the name of the
       # initial state in all the new records.
       def write_initial_state
-        write_attribute self.class.current_state_column, current_state.to_s
+        if self.class.persist_string_state_name?
+          write_attribute self.class.current_state_column, current_state.to_s
+        else
+          write_attribute self.class.current_state_id_column,
+                          self.class.state_name_to_id(current_state.to_s)
+        end
       end
     end
     
@@ -32,6 +46,26 @@ module Apollo
         str = state_machine.state_sets[set_name.to_sym].state_names
         str = str.collect { |state_name| quotes + state_name + quotes }.join(join)
         surround.first + str + surround.last
+      end
+      
+      def persist_string_state_name?
+        self.column_names.include?(self.current_state_column)
+      end
+      
+      def state_id_to_name(state_id)
+        result = ActiveRecord::Base.connection.query "SELECT name FROM states WHERE klass = '#{self.to_s}' AND id = #{state_id}"
+        raise "Cannot find state." if result.empty?
+        result[0][0]
+      end
+      
+      def state_name_to_id(state_name)
+        result = ActiveRecord::Base.connection.query "SELECT id FROM states WHERE klass = '#{self.to_s}' AND name = '#{state_name}'"
+        raise "Cannot find state" if result.empty?
+        result[0][0]
+      end
+      
+      def current_state_id_column
+        self.current_state_id_column.to_s+"_id"
       end
     end
   end
