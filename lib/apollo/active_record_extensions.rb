@@ -44,7 +44,7 @@ module Apollo
         surround  = (options[:surround]  or ['(',')'])
       
         str = state_machine.state_sets[set_name.to_sym].state_names
-        if persiste_string_state_name?
+        if persist_string_state_name?
           str = str.collect { |state_name| quotes + state_name + quotes }.join(join)
         else
           str = str.collect { |state_name| state_name_to_id(state_name) }.join(join)
