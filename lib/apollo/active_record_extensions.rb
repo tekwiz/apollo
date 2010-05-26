@@ -65,7 +65,7 @@ module Apollo
       end
       
       def current_state_id_column
-        self.current_state_id_column.to_s+"_id"
+        self.current_state_column.to_s+"_id"
       end
     end
   end
