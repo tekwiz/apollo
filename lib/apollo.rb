@@ -89,6 +89,10 @@ module Apollo
       res || spec.initial_state
     end
 
+    def current_state=(new_value)
+      @current_state = new_value.to_s
+    end
+
     def halted?
       @halted
     end
@@ -163,7 +167,7 @@ module Apollo
 
     def transition(from, to, name, *args)
       run_on_exit(from, to, name, *args)
-      persist_current_state to.to_s
+      self.current_state = to
       run_on_entry(to, from, name, *args)
     end
 
@@ -208,10 +212,6 @@ module Apollo
     # Default ActiveRecord implementation uses a 'current_state' database column.
     def load_current_state
       @current_state if instance_variable_defined? :@current_state
-    end
-
-    def persist_current_state(new_value)
-      @current_state = new_value
     end
   end
 

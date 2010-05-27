@@ -9,15 +9,13 @@ module Apollo
         end
       end
 
-      # On transition the new current state is immediately saved in the
-      # database.
-      def persist_current_state(new_value)
+      def current_state=(new_value)
         if self.class.persist_string_state_name?
-          update_attribute self.class.current_state_column, new_value
+          self[self.class.current_state_column] = new_value
         else
-          update_attribute self.class.current_state_id_column, 
-                           self.class.state_name_to_id(new_value)
-        end
+          self[self.class.current_state_id_column] = self.class.state_name_to_id(new_value)
+       end
+       self.save! unless self.new_record?
       end
 
       private
