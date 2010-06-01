@@ -6,9 +6,9 @@ begin
   Jeweler::Tasks.new do |gem|
     gem.name = "apollo"
     gem.summary = %Q{A fork of workflow: a finite-state-machine-inspired API for modeling and interacting with what we tend to refer to as 'workflow'.}
-    gem.email = "warlickt@operissystems.com"
+    gem.email = ['warlickt@operissystems.com', 'cfis@zerista.com', 'chambb1@gmail.com']
     gem.homepage = "http://github.com/tekwiz/apollo"
-    gem.authors = ["Travis D. Warlick, Jr."]
+    gem.authors = ["Travis D. Warlick, Jr.", "Charlie Savage", "Blake Chambers"]
     # gem.add_development_dependency "rspec", "~> 1.3.0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
