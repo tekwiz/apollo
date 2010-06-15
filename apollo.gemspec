@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{apollo}
-  s.version = "1.3.0.beta.3"
+  s.version = "1.3.0.beta.4"
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Travis D. Warlick, Jr.", "Charlie Savage", "Blake Chambers"]
-  s.date = %q{2010-06-01}
+  s.date = %q{2010-06-15}
   s.email = ["warlickt@operissystems.com", "cfis@zerista.com", "chambb1@gmail.com"]
   s.extra_rdoc_files = [
     "LICENSE",
