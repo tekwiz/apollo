@@ -2,11 +2,14 @@ module Apollo
   module ActiveRecordExtensions
     module InstanceMethods
       def load_current_state
-        if self.class.persist_string_state_name?
+        result = if self.class.persist_string_state_name?
           read_attribute(self.class.current_state_column)
         else
-          self.class.state_id_to_name(read_attribute(self.class.current_state_id_column))
+          id = read_attribute(self.class.current_state_id_column)
+          self.class.state_id_to_name(id) if id
         end
+
+        result || self.default_state
       end
 
       def current_state=(new_value)
