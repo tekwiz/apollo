@@ -9,6 +9,16 @@ module Apollo
       instance_eval(&specification)
     end
 
+    # TODO - Possibly allow passing of a block here to
+    # allow users more control over the default state
+    # under certain conditions
+    def default_state(state_name = nil)
+      return @default_state unless state_name
+
+      validate_state_name(state_name)
+      @default_state = state_name
+    end
+
     private
 
     def state(name, meta = {:meta => {}}, &events_and_etc)
