@@ -186,7 +186,7 @@ module Apollo
     end
 
     def run_action_callback(action_name, *args)
-      self.send action_name.to_sym, *args if self.respond_to?(action_name.to_sym)
+      self.send action_name.to_sym, *args if self.respond_to?(action_name.to_sym, true)
     end
 
     def run_on_entry(state, prior_state, triggering_event, *args)
@@ -194,7 +194,7 @@ module Apollo
         instance_exec(prior_state.name, triggering_event, *args, &state.on_entry)
       else
         hook_name = "on_#{state}_entry"
-        self.send hook_name, prior_state, triggering_event, *args if self.respond_to? hook_name
+        self.send hook_name, prior_state, triggering_event, *args if self.respond_to?(hook_name, true)
       end
     end
 
@@ -204,7 +204,7 @@ module Apollo
           instance_exec(new_state.name, triggering_event, *args, &state.on_exit)
         else
           hook_name = "on_#{state}_exit"
-          self.send hook_name, new_state, triggering_event, *args if self.respond_to? hook_name
+          self.send hook_name, new_state, triggering_event, *args if self.respond_to?(hook_name, true)
         end
       end
     end
