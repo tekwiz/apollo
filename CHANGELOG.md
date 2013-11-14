@@ -1,6 +1,10 @@
 Apollo Changelog
 ================
 
+## 1.4
+
+* Ruby 2.0 support
+
 ## 1.2
 
 * Added `StateSet` class. (ace5f98)
